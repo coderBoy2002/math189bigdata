@@ -57,8 +57,8 @@ if __name__ == '__main__':
 	# TODO: replace the m_opt and b_opt with the solution you obtained from
 	# 		part (a), note that y = mx + b
 	"*** YOUR CODE HERE ***"
-	m_opt = 0
-	b_opt = 0
+	m_opt = 62 / 35
+	b_opt = 18 / 35
 	"*** END YOUR CODE HERE ***"
 
 
@@ -74,8 +74,10 @@ if __name__ == '__main__':
 	X_space = []
 	y_space = []
 	"*** YOUR CODE HERE ***"
-
-
+	X_space = np.linspace(0, 4, num = 100)
+	func1 = lambda t: m_opt * t + b_opt
+	vfunc1 = np.vectorize(func1)
+	y_space = vfunc1(X_space) 
 	"*** END YOUR CODE HERE ***"
 
 	# plot the optimal learn fit you obtained and save it to your current
@@ -83,8 +85,6 @@ if __name__ == '__main__':
 	plt.plot(X_space, y_space)
 	plt.savefig('hw1pr2c.png', format='png')
 	plt.close()
-
-
 
 
 	# =============part d: Optimal linear fit with random data points=================
@@ -97,8 +97,7 @@ if __name__ == '__main__':
 
 	noise = []
 	"*** YOUR CODE HERE ***"
-
-
+	noise = np.random.normal(mu, sigma, sampleSize)
 	"*** END YOUR CODE HERE ***"
 
 	# TODO: generate y-coordinate of the 100 points with noise
@@ -109,7 +108,9 @@ if __name__ == '__main__':
 
 	y_space_rand = np.zeros(len(X_space))
 	"*** YOUR CODE HERE ***"
-
+	func2 = lambda t: m_opt * t + b_opt
+	vfunc2 = np.vectorize(func2)
+	y_space_rand = np.add(func2(X_space), noise).reshape(-1,1)
 	"*** END YOUR CODE HERE ***"
 
 
@@ -123,16 +124,18 @@ if __name__ == '__main__':
 	#	3) Use np.linalg.solve to solve W_opt following the normal equation:
 	#	   X.T * X * W_opt = X.T * y
 
-
-	X_space_stacked = X_space	# need to be replaced following hint 1 and 2
-	W_opt = None
+	tX = X_space.reshape(100, 1)
+	X_space_stacked = np.hstack((tX, np.ones_like(tX)))	# need to be replaced following hint 1 and 2
+	a = np.matmul(np.transpose(X_space_stacked), X_space_stacked)
+	b = np.matmul(np.transpose(X_space_stacked), y_space_rand)
+	W_opt = np.linalg.solve(a, b)
 	"*** YOUR CODE HERE ***"
 
 
 	"*** END YOUR CODE HERE ***"
 
 	# get the new m, and new b from W_opt obtained above
-	b_rand_opt, m_rand_opt = W_opt.item(0), W_opt.item(1)
+	b_rand_opt, m_rand_opt = W_opt.item(1), W_opt.item(0)
 
 	# TODO: Generate the y-coordinate of 100 points with the new parameters
 	#		obtained
@@ -144,6 +147,9 @@ if __name__ == '__main__':
 
 	y_pred_rand = []
 	"*** YOUR CODE HERE ***"
+	func3 = lambda t: m_rand_opt * t + b_rand_opt
+	vfunc3 = np.vectorize(func3)
+	y_pred_rand = vfunc3(X_space)
 
 
 	"*** END YOUR CODE HERE ***"
