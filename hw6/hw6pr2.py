@@ -25,14 +25,14 @@ import matplotlib.pyplot as plt
 import pandas as pd
 from scipy import ndimage
 import urllib
-import scipy.misc
+import imageio
 
 if __name__ == '__main__':
 
 	# =============STEP 0: LOADING DATA=================
 	# NOTE: Be sure to install Pillow with "pip3 install Pillow"
 	print('==> Loading image data...')
-	img = ndimage.imread(urllib.request.urlopen('http://i.imgur.com/X017qGH.jpg'), flatten=True)
+	img = imageio.imread("clown.png")
 
 	# TODO: Shuffle the image
 
@@ -76,8 +76,8 @@ if __name__ == '__main__':
 	# 		1) Make sure to generate lines with different colors or markers
 
 	"*** YOUR CODE HERE ***"
-	orig_S_plot, = plt.plot(S[:k], 'g')
-	shuf_S_plot, = plt.plot(S_s[:k], 'b')
+	orig_S_plot, = plt.plot(S[:k].flatten(), 'r')
+	shuf_S_plot, = plt.plot(S_s[:k].flatten(), 'b')
 	"*** END YOUR CODE HERE ***"
 
 	plt.legend((orig_S_plot, shuf_S_plot), \
@@ -89,8 +89,7 @@ if __name__ == '__main__':
 
 	# =============STEP 3: RECONSTRUCTION=================
 	print('==> Reconstruction with different ranks...')
-	rank_list = [2, 10, 20]
-	plt.subplot(2, 2, 1)
+	rank_list = [2, 4]
 	plt.imshow(img, cmap='Greys_r')
 	plt.axis('off')
 	plt.title('Original Image')
@@ -106,12 +105,11 @@ if __name__ == '__main__':
 		plt.subplot(2, 2, 2 + index)
 
 		"*** YOUR CODE HERE ***"
-
 		u_temp = U[:, :k]
-		s_temp = np.diag(S)[:k, :k]
+		s_temp = S[:k, :k]
 		v_temp = V[:k, :]
-
-		reconstructed_img = np.matmul(np.matmul(u_temp, s_temp), v_temp)
+		temp_1 = np.matmul(u_temp, s_temp)
+		reconstructed_img = np.matmul(temp_1, v_temp)
 		plt.imshow(reconstructed_img, cmap='Greys_r')
 		"*** END YOUR CODE HERE ***"
 
