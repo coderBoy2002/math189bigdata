@@ -78,7 +78,12 @@ class File_Handler(object):
         plt.xlabel("Day of the Week")
         plt.ylabel("Number Reported")
         plt.title("Number of Accidents by the Day of the Week")
-        plt.show()
+
+        figure = plt.gcf()
+        figure.set_size_inches(8, 6)
+        field_name = "day_of_week"
+        plt.savefig(f'./graphs/{field_name}.png')
+        plt.close()
 
     def yearly_analysis(self):
         print(f"Earliest date: {self.earliest_date}")
@@ -102,7 +107,11 @@ class File_Handler(object):
         plt.ylabel("Number Reported")
         plt.title("Number of Accidents by Year")
 
-        plt.show()
+        figure = plt.gcf()
+        figure.set_size_inches(8, 6)
+        field_name = "yearly"
+        plt.savefig(f'./graphs/{field_name}.png')
+        plt.close()
 
     def borough_analysis(self):
         x_2 = self.df["BOROUGH"]
@@ -114,7 +123,11 @@ class File_Handler(object):
         plt.ylabel("Number Reported")
         plt.title("Number of Accidents by Borough")
 
-        plt.show()
+        figure = plt.gcf()
+        figure.set_size_inches(8, 6)
+        field_name = "borough"
+        plt.savefig(f'./graphs/{field_name}.png')
+        plt.close()
 
     def injuries_analysis(self):
         x_2 = self.df["NUMBER OF PERSONS INJURED"]
@@ -126,7 +139,11 @@ class File_Handler(object):
         plt.ylabel("Frequency")
         plt.title("Frequency of Number of Persons Injured per Accident")
 
-        plt.show()
+        figure = plt.gcf()
+        figure.set_size_inches(8, 6)
+        field_name = "injuries"
+        plt.savefig(f'./graphs/{field_name}.png')
+        plt.close()
 
     def deaths_analysis(self):
         x_2 = self.df["NUMBER OF PERSONS KILLED"]
@@ -138,7 +155,11 @@ class File_Handler(object):
         plt.ylabel("Frequency")
         plt.title("Frequency of Number of Persons Killed")
 
-        plt.show()
+        figure = plt.gcf()
+        figure.set_size_inches(8, 6)
+        field_name = "deaths"
+        plt.savefig(f'./graphs/{field_name}.png')
+        plt.close()
 
     def contributing_factor(self):
         x_2 = self.df["CONTRIBUTING FACTOR VEHICLE 1"]
@@ -163,7 +184,11 @@ class File_Handler(object):
         handles = [plt.Rectangle((0,0),1,1, color="red") for label in labels]
         plt.legend(handles, labels) 
 
-        plt.show()
+        figure = plt.gcf()
+        figure.set_size_inches(8, 6)
+        field_name = "contributing_factors"
+        plt.savefig(f'./graphs/{field_name}.png')
+        plt.close()
 
     def k_means_groups(self, lst_facts):
         a = lambda x: 0 if math.isnan(x) else x
