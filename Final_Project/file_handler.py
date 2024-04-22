@@ -4,17 +4,85 @@ from datetime import datetime
 import numpy as np
 from matplotlib import pyplot as plt
 import math
+import requests
+import pandas as pd
 
 from sklearn.cluster import KMeans
 import numpy as np
+from transformers import AutoTokenizer
+import dask.array as da
+
+from sentence_transformers import SentenceTransformer, util
+import csv
+
+api_token = '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'
+API_URL = "https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2"
+headers = {"Authorization": f"Bearer {api_token}"}
+
+def query(payload):
+    response = requests.post(API_URL, headers=headers, json=payload)
+    return list(response.json())
+
 
 class File_Handler(object):
     def __init__(self):
         self.file_path = file_path = "data/Motor_Vehicle_Accidents_NY.parquet"
         start_time = time.time()
         self.df = dd.read_parquet(self.file_path, engine='pyarrow')
-        print(f"Loading data took {round(time.time() - start_time,2)} (s)")
+        print("Finished Loading")
+        self.df["CRASH TIME"] =  self.df["CRASH TIME"].apply(lambda x: x.split(":")[0])
         
+        self.cause_data_lst = []
+        with open('./data/CLEAN_Cause_Data.csv', mode ='r') as file:    
+            csvFile = csv.DictReader(file)
+            for lines in csvFile:
+                self.cause_data_lst += [lines['0']]
+        '''
+            CLEAN UP NLP
+        start_time = time.time()
+        source_sentences = ["Unspecified", "Aggressive Driving", "Driver Inattention/Distraction", "Alcohol Involvement"]
+        
+        #num_batches = 272
+        num_batches = 100
+        batch_size = 300
+        clean_contributing_factor = []
+        start_time = time.time()
+
+        model = SentenceTransformer('sentence-transformers/msmarco-distilbert-base-tas-b')
+        for i in range(num_batches):
+            if i%2 == 0:
+                print(f"{i}     time: {round(time.time() - start_time, 2)}")
+                start_time = time.time()
+            clean_none = lambda x: x if x else "Unspecified"
+            batch = clean_none(list(self.df["CONTRIBUTING FACTOR VEHICLE 1"][i * batch_size:(i + 1) *  batch_size]))
+            scores = []
+            for source_sentence in source_sentences:
+                query = source_sentence
+                docs = batch
+
+                #Encode query and documents
+                query_emb = model.encode(query)
+                doc_emb = model.encode(docs)
+
+                data = util.dot_score(query_emb, doc_emb)[0].cpu().tolist()
+
+                scores += [data]
+            clean_lst = []
+            for j in range(len(scores[0])):
+                if batch[j] == "Unspecified":
+                    clean_lst += ["Unspecified"]
+                else:
+                    temp_scores = [score[j] for score in scores]
+                    best_score = max(temp_scores)
+                    index_score = temp_scores.index(best_score)
+                    clean_lst += [source_sentences[index_score]]
+
+            clean_contributing_factor += clean_lst
+
+        #df = pd.DataFrame(np.array(clean_contributing_factor))
+        #df.to_csv("./data/CLEAN_Cause_Data.csv")
+            '''
+
         self.latest_date = None
         self.earliest_date = None
         pass
@@ -129,6 +197,22 @@ class File_Handler(object):
         plt.savefig(f'./graphs/{field_name}.png')
         plt.close()
 
+    def crashtime_analysis(self):
+        x_2 = self.df["CRASH TIME"]
+        (lst_boroughs, lst_data, max_label, max_label_val) = self.group_up_str_fields(x_2, "int") 
+
+        plt.plot(lst_boroughs, lst_data)
+        plt.ylim([0, max_label_val * 1.2])
+        plt.xlabel("Hour")
+        plt.ylabel("Number Reported")
+        plt.title("Number of Accidents by Crash Time")
+
+        figure = plt.gcf()
+        figure.set_size_inches(8, 6)
+        field_name = "crash_time"
+        plt.savefig(f'./graphs/{field_name}.png')
+        plt.close()
+
     def injuries_analysis(self):
         x_2 = self.df["NUMBER OF PERSONS INJURED"]
         (lst_injuries, lst_data, max_label, max_label_val) = self.group_up_str_fields(x_2, "int")
@@ -162,19 +246,19 @@ class File_Handler(object):
         plt.close()
 
     def contributing_factor(self):
-        x_2 = self.df["CONTRIBUTING FACTOR VEHICLE 1"]
+        x_2 = self.cause_data_lst
         (lst_contributing_factors, lst_data, max_label, max_label_val) = self.group_up_str_fields(x_2, None)
         
-        cut_off = 50000
+        cut_off = 1000
         new_lst_factors = []
         new_lst_data = []
         for i in range(len(lst_contributing_factors)):
-            if lst_data[i] > cut_off and lst_contributing_factors[i] != "Unspecified":
+            if lst_data[i] > cut_off and lst_contributing_factors[i] not in ["Unspecified","Unspecificed"]:
                 new_lst_factors += [lst_contributing_factors[i]]
                 new_lst_data += [lst_data[i]]
 
         plt.bar([i for i in range(len(new_lst_data))], new_lst_data)
-        plt.ylim([0, max_label_val * 0.8])
+        plt.ylim([0, max_label_val * 1.2])
         plt.xlabel("Contributing Factor")
         plt.ylabel("Frequency")
         plt.title("Frequency of Contributing Factors of Accident")
@@ -190,42 +274,78 @@ class File_Handler(object):
         plt.savefig(f'./graphs/{field_name}.png')
         plt.close()
 
+    def contributing_factor_ai(self):
+        x_2 = self.cause_data_lst
+        (lst_contr_fact, lst_data, max_label, max_label_val) = self.group_up_str_fields(x_2, None)
+
+        plt.bar(lst_contr_fact, lst_data)
+        plt.ylim([0, max_label_val * 1.2])
+        plt.xlabel("Cause of Accident")
+        plt.ylabel("Number Reported")
+        plt.title("Frequency of Different Causes of Accident")
+
+        figure = plt.gcf()
+        figure.set_size_inches(8, 6)
+        field_name = "cause_of_accident"
+        plt.savefig(f'./graphs/{field_name}.png')
+        plt.close()
+
+    '''
+    TODO KMEANS WITH CAUSE OF ACCIDENT
+    '''
+
+    '''
+    TODO KMEANS WITH VEHICLE INFORMATION
+    '''
+
     def k_means_groups(self, lst_facts):
+        burroughs_lst = ["BROOKLYN", "QUEENS", "MANHATTAN", "BRONX", "STATEN ISLAND"]
+       
         a = lambda x: 0 if math.isnan(x) else x
+        b = lambda x: burroughs_lst.index(x) + 1 if x in burroughs_lst else float(x)
+        c = lambda x: a(x) if type(x) != str else b(x)
+        d = lambda x: c(x) if x else 0 
         lst_dumb = []
         for val in np.array(self.df[lst_facts].values):
-            lst_dumb += [np.array([a(val_2) for val_2 in val])]
+            lst_dumb += [np.array([d(val_2) for val_2 in val])]
         X = np.array(lst_dumb)
-        num = len(lst_facts)
-        kmeans = KMeans(n_clusters = num).fit(X)
-        dct_count = {}
-        for label in kmeans.labels_:
-            if label in dct_count:
-                dct_count[label] += 1
-            else:
-                dct_count[label] = 1
+        print(X.shape)
+        numCluster = 30
+        kmeans = KMeans(n_clusters = numCluster).fit(X)
+
         print(f"Factors:    {lst_facts}")
-        print(f"Labels:     {[ (key, dct_count[key]) for key in dct_count.keys()]}")
+        
+        lstCount = [(0, i) for i in range(numCluster)]
+        for label in kmeans.labels_:
+            tV = lstCount[label]
+            lstCount[label] = (tV[0] + 1, tV[1])
+        lstCount = sorted(lstCount)[::-1]
+        print("Centers:")
+        for i in range(len(lstCount)):
+            groupNum = lstCount[i][1]
+            numCount = lstCount[i][0]
+            print(f"{groupNum},   {numCount},    {[round(val,2) for val in kmeans.cluster_centers_[groupNum]]}")
 
-        new_centers = []
-        for center in kmeans.cluster_centers_:
-            new_centers += [[int(val) for val in center]]
 
-        print(f"Centers:     {new_centers}")
+    def all_kmeans_analysis(self):
+        lst_1 = ["CRASH TIME","BOROUGH", "NUMBER OF PERSONS INJURED", "NUMBER OF PERSONS KILLED"]
+        print("Deaths and Injuries")
+        self.k_means_groups(lst_1)
 
     def introductory_analysis(self):
         num_entries = self.df.shape[0].compute()
         print(f"Num motor vehicle accident entries is {num_entries}")
         
-        self.day_of_week_analysis()
-        self.yearly_analysis()
-        self.borough_analysis()
-        self.injuries_analysis()
-        self.deaths_analysis()
+        #self.day_of_week_analysis()
+        #self.yearly_analysis()
+        #self.borough_analysis()
+        #self.injuries_analysis()
+        #self.deaths_analysis()
         self.contributing_factor()
+        #self.crashtime_analysis()
+        self.contributing_factor_ai()
+        self.all_kmeans_analysis()
 
-        lst_1 = ["NUMBER OF PERSONS INJURED", "NUMBER OF PERSONS KILLED", "NUMBER OF PEDESTRIANS INJURED", "NUMBER OF PEDESTRIANS KILLED", "NUMBER OF CYCLIST INJURED", "NUMBER OF CYCLIST KILLED", "NUMBER OF MOTORIST INJURED", "NUMBER OF MOTORIST KILLED"]
-        self.k_means_groups(lst_1)
 
 
 if __name__ == "__main__":
