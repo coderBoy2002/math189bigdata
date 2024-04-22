@@ -15,14 +15,13 @@ import dask.array as da
 from sentence_transformers import SentenceTransformer, util
 import csv
 
-api_token = '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'
-API_URL = "https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2"
-headers = {"Authorization": f"Bearer {api_token}"}
-
+#API_URL = "https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2"
+#headers = {"Authorization": f"Bearer {api_token}"}
+'''
 def query(payload):
     response = requests.post(API_URL, headers=headers, json=payload)
     return list(response.json())
-
+'''
 
 class File_Handler(object):
     def __init__(self):
